@@ -1,0 +1,20 @@
+appId: org.mozilla.ios.Focus
+name: Change Search Engine
+---
+- launchApp:
+    clearState: true
+- runFlow: ../common/Onboarding.yaml
+- tapOn:
+    id: "HomeView.settingsButton"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "Search Engine" 
+    direction: DOWN
+- tapOn: "Search Engine"
+- tapOn: "DuckDuckGo"
+- tapOn:
+    id: "SettingsViewController.doneButton"
+- inputText: "Maestro Studio"
+- pressKey: enter
+- assertVisible: "duckduckgo.com"
+- assertVisible: ".*mobile.dev.*"

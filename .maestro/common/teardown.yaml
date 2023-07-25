@@ -1,0 +1,4 @@
+appId: org.mozilla.ios.Focus
+---
+- takeScreenshot: screenshot-teardown-${NAME}
+- stopRecording

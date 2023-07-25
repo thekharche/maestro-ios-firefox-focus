@@ -1,0 +1,761 @@
+---
+format_version: '8'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: ios
+
+
+trigger_map:
+- push_branch: main
+  pipeline: pipeline_build_and_run_tests
+- pull_request_source_branch: "*"
+  pipeline: pipeline_build_and_run_tests
+- tag: "*"
+  workflow: release
+
+pipelines:
+  pipeline_build_and_run_tests:
+    stages:
+    - stage_1: {}
+    - stage_2: {}
+
+stages:
+  stage_1:
+    workflows:
+    - configure_build: {}
+
+  stage_2:
+    workflows:
+    - ui_test_focus: {}
+    - unit_test_klar: {}
+    - unit_test_focus: {}
+
+workflows:
+  configure_build:
+    steps:
+    - git-clone@6.2: {}
+    - cache-pull@2: {}
+    - certificate-and-profile-installer@1: {}
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            ./checkout.sh
+        title: ContentBlockerGen
+    - swiftlint-extended@1:
+        inputs:
+        - linting_path: "$BITRISE_SOURCE_DIR"
+    - script@1:
+        title: Set Default Web Browser Entitlement
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Focus.entitlements
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Klar.entitlements
+    - git::https://github.com/DamienBitrise/bitrise-test-plan-sharder.git@master:
+        title: Bitrise Test Plan Sharder
+        inputs:
+        - xcode_project: Blockzilla.xcodeproj
+        - target: Blockzilla
+        - shards: '2'
+        - scheme: Focus
+        - test_plan: SmokeTest.xctestplan
+        - debug_mode: 'true'
+        - test_path: ''
+        - file_type: ".swift"
+    - script@1.1:
+        title: Build for Testing Focus
+        inputs:
+        - content: |
+            set -euxo pipefail
+            echo "-- build-for-testing --"
+            mkdir DerivedData
+            xcodebuild -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+            xcodebuild "-project" "/Users/vagrant/git/Blockzilla.xcodeproj" "-scheme" "Focus" -configuration "FocusDebug" "CODE_SIGNING_ALLOWED=NO" "-destination" "platform=iOS Simulator,name=iPhone 14,OS=16.4" "COMPILER_INDEX_STORE_ENABLE=NO" "build-for-testing" "CODE_SIGN_IDENTITY=" "CODE_SIGNING_REQUIRED=NO" "CODE_SIGNING_ALLOWED=NO" -derivedDataPath "/Users/vagrant/git/DerivedData" | xcpretty | tee xcodebuild_test.log
+    - script@1.1:
+        title: Build for Testing Klar
+        inputs:
+        - content: |
+            set -euxo pipefail
+            echo "-- build-for-testing --"
+            xcodebuild "-project" "/Users/vagrant/git/Blockzilla.xcodeproj" "-scheme" "Klar" -configuration "KlarDebug" "CODE_SIGNING_ALLOWED=NO" "-destination" "platform=iOS Simulator,name=iPhone 14,OS=16.4" "COMPILER_INDEX_STORE_ENABLE=NO" "build-for-testing" "CODE_SIGN_IDENTITY=" "CODE_SIGNING_REQUIRED=NO" "CODE_SIGNING_ALLOWED=NO" -derivedDataPath "/Users/vagrant/git/DerivedData" | xcpretty | tee xcodebuild_test.log
+    - script@1.1:
+        title: Compress Derived Data
+        is_always_run: true
+        inputs:
+        - content: |
+            set -euxo pipefail
+            echo "-- compress --"
+            exec zip -0 -qr "${BITRISE_SOURCE_DIR}/DerivedData.zip" \
+            "${BITRISE_SOURCE_DIR}/Blockzilla.xcodeproj" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/FocusDebug-iphonesimulator/Firefox\ Focus.app" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/FocusDebug-iphonesimulator/XCUITest-Runner.app" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/Focus_FullFunctionalTests_iphonesimulator16.4-arm64.xctestrun" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/Focus_SmokeTest_iphonesimulator16.4-arm64.xctestrun" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/Focus_UnitTests_iphonesimulator16.4-arm64.xctestrun" \
+            "$BITRISE_SOURCE_DIR/SmokeTest.xctestplan" \
+            "$BITRISE_SOURCE_DIR/FullFunctionalTests.xctestplan" \
+            "$BITRISE_SOURCE_DIR/xcodebuild.log" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/FocusDebug-iphonesimulator/" \
+            "$BITRISE_SOURCE_DIR/Blockzilla.xcodeproj/UnitTests.xctestplan" \
+            "$BITRISE_SOURCE_DIR/Blockzilla/" \
+            "$BITRISE_SOURCE_DIR/XCUITest" \
+            "$BITRISE_SOURCE_DIR/ClientTests" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/KlarDebug-iphonesimulator/Firefox\ Klar.app" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/KlarDebug-iphonesimulator/XCUITest-Runner.app" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/Klar_FullFunctionalTests_iphonesimulator16.4-arm64.xctestrun" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/Klar_SmokeTest_iphonesimulator16.4-arm64.xctestrun" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/Klar_UnitTests_iphonesimulator16.4-arm64.xctestrun" \
+            "$BITRISE_SOURCE_DIR/DerivedData/Build/Products/KlarDebug-iphonesimulator/" \
+    - deploy-to-bitrise-io@2:
+        inputs:
+        - deploy_path: "${BITRISE_SOURCE_DIR}/DerivedData.zip"
+    - slack@3:
+        run_if: ".IsBuildFailed"
+        inputs:
+        - channel: "#focus-ios-alerts"
+        - message: "The build failed to build"
+        - webhook_url: "$SLACK_WEBHOOK"
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+  
+  ui_test_focus:
+    steps:
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+            # Check if it is a scheduled or regular build
+            # to select the testPlan to run
+            
+            if [[ $BITRISE_GIT_MESSAGE == Schedule* ]]
+            then
+                echo "Scheduled build, running Full Functional Tests"
+                envman add --key TEST_PLAN_NAME --value FullFunctionalTests
+            else
+                echo "Regular build, running Smoke Test"
+                envman add --key TEST_PLAN_NAME --value SmokeTest
+            fi
+        - title: Check if build is scheduled or regular to set the test plan
+    - git::https://github.com/bitrise-steplib/bitrise-step-artifact-pull.git@main:
+        title: Pull artifacts
+        inputs:
+        - verbose: true
+        - artifact_sources: stage_1.*
+    - script@1.1:
+        title: Unzip
+        inputs:
+        - content: |
+            set -euxo pipefail
+            echo "$BITRISE_ARTIFACT_PATHS"
+            echo "-- unzip -- "
+            exec unzip "${BITRISE_ARTIFACT_PATHS}"
+            echo "show dir"
+            ls
+    - script@1.1:
+        title: Test without Building
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -ex
+            ls ./Users/vagrant/git/XCUITest/
+            ls ./Users/vagrant/git/DerivedData/Build/Products
+            cp -r ./Users/vagrant/git/XCUITest/* .
+            mv ./Users/vagrant/git/* .
+            ls -la
+            echo "-- test-without-building --"
+            xcodebuild -resultBundlePath "xcodebuild.xcresult" -derivedDataPath "/Users/vagrant/git/DerivedData" -destination "platform=iOS Simulator,name=iPhone 14,OS=16.4" test-without-building -xctestrun "/Users/vagrant/git/DerivedData/Build/Products/Focus_SmokeTest_iphonesimulator16.4-arm64.xctestrun"
+    - custom-test-results-export@0:
+        inputs:
+        - search_pattern: "$BITRISE_SOURCE_DIR/xcodebuild.xcresult"
+        - test_name: SmokeTest
+    - deploy-to-bitrise-io@2: {}
+    - github-status@2:
+        inputs:
+        - status_identifier: "Focus-build"
+    - slack@3:
+        run_if: ".IsBuildFailed"
+        inputs:
+        - channel: "#focus-ios-alerts"
+        - message: "The build run the Focus testPlan: $TEST_PLAN_NAME"
+        - webhook_url: "$SLACK_WEBHOOK"
+
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+
+  unit_test_klar:
+    steps:
+    - git::https://github.com/bitrise-steplib/bitrise-step-artifact-pull.git@main:
+        title: Pull artifacts
+        inputs:
+        - verbose: true
+        - artifact_sources: stage_1.*
+    - script@1.1:
+        title: Unzip
+        inputs:
+        - content: |
+            set -euxo pipefail
+            echo "$BITRISE_ARTIFACT_PATHS"
+            echo "-- unzip -- "
+            exec unzip "${BITRISE_ARTIFACT_PATHS}"
+            echo "show dir"
+            ls
+    - script@1.1:
+        title: Test without Building
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -ex
+            ls ./Users/vagrant/git/Blockzilla.xcodeproj/
+            cp -r ./Users/vagrant/git/Blockzilla.xcodeproj/* .
+            mv ./Users/vagrant/git/* .
+            ls -la
+            echo "-- test-without-building --"
+            xcodebuild -resultBundlePath "xcodebuild.xcresult" -derivedDataPath "/Users/vagrant/git/DerivedData" -destination "platform=iOS Simulator,name=iPhone 14,OS=16.4" test-without-building -xctestrun "/Users/vagrant/git/DerivedData/Build/Products/Klar_UnitTests_iphonesimulator16.4-arm64.xctestrun"
+    - custom-test-results-export@0:
+        inputs:
+        - search_pattern: "$BITRISE_SOURCE_DIR/xcodebuild.xcresult"
+        - test_name: UnitTestsKlar
+    - deploy-to-bitrise-io@2: {}
+    - slack@3:
+        run_if: ".IsBuildFailed"
+        inputs:
+        - channel: "#focus-ios-alerts"
+        - message: "The build run the Klar testPlan: UnitTests"
+        - webhook_url: "$SLACK_WEBHOOK"
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+
+  unit_test_focus:
+    steps:
+    - git::https://github.com/bitrise-steplib/bitrise-step-artifact-pull.git@main:
+        title: Pull artifacts
+        inputs:
+        - verbose: true
+        - artifact_sources: stage_1.*
+    - script@1.1:
+        title: Unzip
+        inputs:
+        - content: |
+            set -euxo pipefail
+            echo "$BITRISE_ARTIFACT_PATHS"
+            echo "-- unzip -- "
+            exec unzip "${BITRISE_ARTIFACT_PATHS}"
+            echo "show dir"
+            ls
+    - script@1.1:
+        title: Test without Building
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -ex
+            ls ./Users/vagrant/git/Blockzilla.xcodeproj/
+            cp -r ./Users/vagrant/git/Blockzilla.xcodeproj/* .
+            mv ./Users/vagrant/git/* .
+            ls -la
+            echo "-- test-without-building --"
+            xcodebuild -resultBundlePath "xcodebuild.xcresult" -derivedDataPath "/Users/vagrant/git/DerivedData" -destination "platform=iOS Simulator,name=iPhone 14,OS=16.4" test-without-building -xctestrun "/Users/vagrant/git/DerivedData/Build/Products/Focus_UnitTests_iphonesimulator16.4-arm64.xctestrun"
+    - custom-test-results-export@0:
+        inputs:
+        - search_pattern: "$BITRISE_SOURCE_DIR/xcodebuild.xcresult"
+        - test_name: UnitTests
+    - deploy-to-bitrise-io@2: {}
+    - slack@3:
+        run_if: ".IsBuildFailed"
+        inputs:
+        - channel: "#focus-ios-alerts"
+        - message: "The build run the Focus testPlan: UnitTests"
+        - webhook_url: "$SLACK_WEBHOOK"
+
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+
+
+  clone-and-build-dependencies:
+    description: Clones the repo and builds dependencies
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@6.2: {}
+    - certificate-and-profile-installer@1: {}
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            ./checkout.sh
+        title: ContentBlockerGen
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+
+
+  set-project-version:
+    steps:
+    - set-xcode-build-number@1:
+        inputs:
+        - build_version_offset: '3250'
+        - plist_path: Blockzilla/Info.plist
+        title: Set Blockzilla version numbers
+    - set-xcode-build-number@1:
+        inputs:
+        - build_version_offset: '3250'
+        - plist_path: ContentBlocker/Info.plist
+        title: Set ContentBlocker version numbers
+    - set-xcode-build-number@1:
+        inputs:
+        - build_version_offset: '3250'
+        - plist_path: FocusIntentExtension/Info.plist
+        title: Set FocusIntentExtension version numbers
+    - set-xcode-build-number@1:
+        inputs:
+        - build_version_offset: '3250'
+        - plist_path: OpenInFocus/Info.plist
+        title: Set OpenInFocus version numbers
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+
+
+  configure-nimbus:
+    steps:
+    - script@1:
+        title: Configure Nimbus
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :NimbusServerURL string ${NIMBUS_SERVER_URL}" Blockzilla/Info.plist
+            /usr/libexec/PlistBuddy -c "Add :NimbusStagingServerURL string ${NIMBUS_STAGING_SERVER_URL}" Blockzilla/Info.plist
+            /usr/libexec/PlistBuddy -c "Set :NimbusAppName ${NIMBUS_APP_NAME}" Blockzilla/Info.plist
+            /usr/libexec/PlistBuddy -c "Set :NimbusAppChannel ${NIMBUS_APP_CHANNEL}" Blockzilla/Info.plist
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+
+
+  configure-sentry:
+    steps:
+    - script@1:
+        title: Configure Sentry
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :SentryDSN string ${SENTRY_DSN}" Blockzilla/Info.plist
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+
+
+  set-default-browser-entitlement:
+    steps:
+    - script@1:
+        title: Set Default Web Browser Entitlement
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Focus.entitlements
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Klar.entitlements
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+
+
+  release:
+    steps:
+    - certificate-and-profile-installer@1: {}
+    - xcode-archive@3:
+        inputs:
+        - scheme: Focus
+        - team_id: 43AQ936H96
+        - export_method: app-store
+        title: Build Focus
+    - deploy-to-itunesconnect-application-loader@1:
+        inputs:
+        - connection: 'off'
+        - app_password: "$APPLE_ACCOUNT_PW"
+        - itunescon_user: "$APPLE_ACCOUNT_ID"
+    - script@1:
+        title: Upload Focus Symbols
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            tools/sentry-cli --auth-token "$SENTRY_AUTH_TOKEN" upload-dif \
+              --org mozilla --project focus-ios "$BITRISE_DSYM_DIR_PATH"
+    - xcode-archive@3:
+        inputs:
+        - scheme: Klar
+        - export_method: app-store
+        title: Build Klar
+    - deploy-to-itunesconnect-application-loader@1:
+        inputs:
+        - connection: 'off'
+        - app_password: "$APPLE_ACCOUNT_PW"
+        - itunescon_user: "$APPLE_ACCOUNT_ID"
+    - script@1:
+        title: Upload Klar Symbols
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            tools/sentry-cli --auth-token "$SENTRY_AUTH_TOKEN" upload-dif \
+              --org mozilla --project klar-ios "$BITRISE_DSYM_DIR_PATH"
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+    before_run:
+      - clone-and-build-dependencies
+      - set-project-version
+      - set-default-browser-entitlement
+      - configure-nimbus
+      - configure-sentry
+
+
+  runParallelTests:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - cache-pull@2: {}
+    - cache-push@2:
+        inputs:
+        - cache_paths: "/Users/vagrant/git"
+    - build-router-start@0:
+        inputs:
+        - wait_for_builds: 'true'
+        - access_token: "$FOCUS_PARALLEL"
+        - workflows: |-
+            runFocus
+            runKlar
+    - build-router-wait@0:
+        inputs:
+        - access_token: "$FOCUS_PARALLEL"
+    - deploy-to-bitrise-io@1: {}
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+
+  runParallelTestsM1Beta:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - cache-pull@2: {}
+    - cache-push@2:
+        inputs:
+        - cache_paths: "/Users/vagrant/git"
+    - build-router-start@0:
+        inputs:
+        - wait_for_builds: 'true'
+        - access_token: "$FOCUS_PARALLEL"
+        - workflows: |-
+            runFocus
+            runKlar
+    - build-router-wait@0:
+        inputs:
+        - access_token: "$FOCUS_PARALLEL"
+    - deploy-to-bitrise-io@1: {}
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+
+  runFocus:
+    steps:
+    - git-clone@6.2: {}
+    - cache-pull@2: {}
+    - certificate-and-profile-installer@1: {}
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+
+            # Check if it is a scheduled or regular build
+            # to select the testPlan to run
+            
+            if [[ $BITRISE_GIT_MESSAGE == Schedule* ]]
+            then
+                echo "Scheduled build, running Full Functional Tests"
+                envman add --key TEST_PLAN_NAME --value FullFunctionalTests
+            else
+                echo "Regular build, running Smoke Test"
+                envman add --key TEST_PLAN_NAME --value SmokeTest
+            fi
+
+        - title: Check if build is scheduled or regular to set the test plan
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            ./checkout.sh
+        title: ContentBlockerGen
+    - swiftlint-extended@1:
+        inputs:
+        - linting_path: "$BITRISE_SOURCE_DIR"
+    - script@1:
+        title: Set Default Web Browser Entitlement
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Focus.entitlements
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Klar.entitlements
+    - xcode-build-for-simulator@0.12:
+        inputs:
+        - configuration: FocusDebug
+        - xcodebuild_options: CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+        - scheme: Focus
+        - simulator_device: iPhone 14
+    - xcode-test@4.5:
+        inputs:
+        - xcodebuild_test_options: CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_ALLOWED=NO -testPlan UnitTests
+        - scheme: Focus
+        - test_plan: UnitTests
+        - destination: platform=iOS Simulator,name=iPhone 14,OS=16.4
+    - xcode-test@4.5:
+        inputs:
+        - xcodebuild_test_options: CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_ALLOWED=NO -maximum-parallel-testing-workers 2 -testPlan $TEST_PLAN_NAME
+        - scheme: Focus
+        - test_plan: $TEST_PLAN_NAME
+        - destination: platform=iOS Simulator,name=iPhone 14,OS=16.4
+    - deploy-to-bitrise-io@2: {}
+    - github-status@2:
+        inputs:
+        - status_identifier: "Focus-build"
+    - slack@3:
+        run_if: ".IsBuildFailed"
+        inputs:
+        - channel: "#focus-ios-alerts"
+        - message: "The build run the testPlan: $TEST_PLAN_NAME"
+        - webhook_url: "$SLACK_WEBHOOK"
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+
+  runKlar:
+    steps:
+    - git-clone@6.2: {}
+    - cache-pull@2: {}
+    - certificate-and-profile-installer@1: {}
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+
+            # Check if it is a scheduled or regular build
+            # to select the testPlan to run
+
+            if [[ $BITRISE_GIT_MESSAGE == Schedule* ]]
+            then
+                echo "Scheduled build, running Full Functional Tests"
+                envman add --key TEST_PLAN_NAME --value FullFunctionalTests
+            else
+                echo "Regular build, running Smoke Test"
+                envman add --key TEST_PLAN_NAME --value SmokeTest
+            fi
+        - title: Check if build is scheduled or regular to set the test plan
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            ./checkout.sh
+        title: ContentBlockerGen
+    - swiftlint-extended@1:
+        inputs:
+        - linting_path: "$BITRISE_SOURCE_DIR"
+    - script@1:
+        title: Set Default Web Browser Entitlement
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Focus.entitlements
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Klar.entitlements
+    - script@1:
+        title: See available sims
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            xcrun simctl list
+    - xcode-build-for-simulator@0.12:
+        inputs:
+        - configuration: FocusDebug
+        - xcodebuild_options: CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+        - scheme: Klar
+        - simulator_device: iPhone 14 Plus
+        - simulator_os_version: latest
+    - xcode-test@4.5:
+        inputs:
+        - scheme: Klar
+        - xcodebuild_test_options: CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_ALLOWED=NO -testPlan UnitTests
+        - test_plan: UnitTests
+        - destination: platform=iOS Simulator,name=iPhone 14,OS=16.4
+    - xcode-test@4.5:
+        inputs:
+        - xcodebuild_test_options: CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_ALLOWED=NO -maximum-parallel-testing-workers 2 -testPlan "$TEST_PLAN_NAME"
+        - scheme: Klar
+        - simulator_device: iPhone 14
+        - destination: platform=iOS Simulator,name=iPhone 14,OS=16.4
+        - test_plan: "$TEST_PLAN_NAME"
+    - deploy-to-bitrise-io@2: {}
+    - github-status@2:
+        inputs:
+        - status_identifier: "Klar-build"
+    - slack@3:
+        run_if: ".IsBuildFailed"
+        inputs:
+        - channel: "#focus-ios-alerts"
+        - message: "The build run the testPlan: $TEST_PLAN_NAME"
+        - webhook_url: "$SLACK_WEBHOOK"
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+  L10nScreenshotsTests:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@6.2: {}
+    - cache-pull@2: {}
+    - certificate-and-profile-installer@1: {}
+    - script@1:
+        title: Set Default Web Browser Entitlement
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Focus.entitlements
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Klar.entitlements
+    - script@1:
+        inputs:
+        - content: >-
+            #!/usr/bin/env bash
+
+            # fail if any commands fails
+
+            set -e
+
+            # debug log
+
+            set -x
+
+            echo "curl to Download derived data"
+
+            curl --location --retry 5 --output l10n-screenshots-dd.zip "$MOZ_DERIVED_DATA_PATH"
+
+            mkdir l10n-screenshots-dd
+
+            unzip l10n-screenshots-dd.zip -d l10n-screenshots-dd
+
+            rm l10n-screenshots-dd.zip
+        title: Download derived data path
+    - script@1:
+        title: Generate screenshots
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+            # workaround until 2.187 version is installed. Error with 2.186
+
+            ./l10n-screenshots.sh --test-without-building $MOZ_LOCALES
+            mkdir -p artifacts
+
+            for locale in $(echo $MOZ_LOCALES); do
+              # Only Focus for now
+              zip -9 -j "$locale.zip" "l10n-screenshots/$locale/$locale/"*
+              mv "$locale.zip" artifacts/
+            done
+    - deploy-to-bitrise-io@1.10:
+        inputs:
+        - deploy_path: artifacts/
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+  L10nBuild:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@6.2: {}
+    - cache-pull@2: {}
+    - certificate-and-profile-installer@1: {}
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            ./checkout.sh
+        title: ContentBlockerGen
+    - script@1:
+        title: Set Default Web Browser Entitlement
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Focus.entitlements
+            /usr/libexec/PlistBuddy -c "Add :com.apple.developer.web-browser bool true" Klar.entitlements
+    - script@1:
+        title: Generate screenshots
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            # workaround until 2.187 version is installed. Error with 2.186
+            
+            ./l10n-screenshots.sh en-US
+    - deploy-to-bitrise-io@1.10:
+        inputs:
+        - deploy_path: l10n-screenshots-dd/
+        - is_compress: 'true'
+    - deploy-to-bitrise-io@1.10:
+        inputs:
+        - deploy_path: l10n-screenshots/en-US/en-US
+        - is_compress: 'true'
+    meta:
+      bitrise.io:
+        stack: osx-xcode-14.3.x-ventura
+        machine_type_id: g2-m1.8core
+
+app:
+  envs:
+  - opts:
+      is_expand: false
+    BITRISE_PROJECT_PATH: Blockzilla.xcodeproj
+  - opts:
+      is_expand: false
+    BITRISE_EXPORT_METHOD: app-store
+
+meta:
+  bitrise.io:
+    stack: osx-xcode-14.3.x-ventura
+    machine_type_id: g2-m1.8core

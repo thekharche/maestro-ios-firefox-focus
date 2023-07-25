@@ -1,0 +1,7 @@
+appId: org.mozilla.ios.Focus
+name: Delete Search History
+---
+- runFlow: ../search/FirstSearch.yaml
+- tapOn:
+    id: "URLBar.deleteButton"
+- assertVisible: ".*Browsing history cleared.*"

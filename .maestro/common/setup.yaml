@@ -1,0 +1,7 @@
+appId: org.mozilla.ios.Focus
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+- takeScreenshot: screenshot-setup-${NAME}
+- startRecording: recording-setup-${NAME}

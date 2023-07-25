@@ -1,0 +1,264 @@
+/* Button on About screen */
+"About.learnMoreButton" = "Saznaj više";
+
+/* Label on About screen */
+"About.missionLabel" = "%@ je produciran od Mozille. naša misija je da podstičemo zdrav i otvoren Internet.";
+
+/* Label on About screen */
+"About.privateBullet1" = "Traži direktno u aplikaciji";
+
+/* Label on About screen */
+"About.privateBullet2" = "Blokirajte tragače (ili ažurirajte podešavanja kako biste omogućili traganje)";
+
+/* Label on About screen */
+"About.privateBullet3" = "Obrišite za brisanje kolačića, kao i pretragu i historiju pregledanja";
+
+/* Label on About screen */
+"About.privateBulletHeader" = "Koristi kao privatni browser:";
+
+/* Label for row in About screen */
+"About.rowHelp" = "Pomoć";
+
+/* Link to Privacy Notice in the About screen */
+"About.rowPrivacy" = "Napomena o privatnosti";
+
+/* Label for row in About screen */
+"About.rowRights" = "Vaša prava";
+
+/* Label on About screen */
+"About.safariBullet1" = "Blokiraj tragače za poboljšanu privatnost";
+
+/* Label on About screen */
+"About.safariBullet2" = "Blokiraj web fontove za smanjene veličine stranice";
+
+/* Label on About screen */
+"About.safariBulletHeader" = "Koristi kao Safari ekstenziju:";
+
+/* %@ is the name of the app (Focus / Klar). Title displayed in the settings screen that, when tapped, takes the user to a page with information about the product. Also displayed as a header for the About page. */
+"About.title" = "O %@";
+
+/* Label on About screen */
+"About.topLabel" = "%@ vam daje kontrolu.";
+
+/* Title for action sheet item to open the current page in another application. Placeholder is the name of the application to open the current page. */
+"actionSheet.openIn" = "Otvori u %@";
+
+/* Label for button to add a custom URL */
+"Autocomplete.addCustomUrl" = "Dodaj prilagođeni URL";
+
+/* Label for error state when entering an invalid URL */
+"Autocomplete.addCustomUrlError" = "Dvaput provjerite URL koji ste unijeli.";
+
+/* A label displaying an example URL */
+"Autocomplete.addCustomUrlExample" = "Primjer: example.com";
+
+/* Label for the input to add a custom URL */
+"Autocomplete.addCustomUrlLabel" = "URL za dodavanje";
+
+/* Placeholder for the input field to add a custom URL */
+"Autocomplete.addCustomUrlPlaceholder" = "Zalijepite ili unesite URL";
+
+/* Label for button to add a custom URL with the + prefix */
+"Autocomplete.addCustomUrlWithPlus" = "+ Dodaj prilagođeni URL";
+
+/* Label for toast alerting a custom URL has been added */
+"Autocomplete.customUrlAdded" = "Novi prilagođeni URL dodan.";
+
+/* Description for enabling or disabling the default list. The placeholder is replaced with the application name, which can be either Firefox Focus or Firefox Klar. */
+"Autocomplete.defaultDescriptoin" = "Omogućite da %@ automatski završi preko 450 popularnih URL adresa u adresnoj traci.";
+
+/* label describing URL Autocomplete as disabled */
+"Autocomplete.disabled" = "Onemogućeno";
+
+/* Label for button to add a custom URL */
+"Autocomplete.emptyState" = "Nema prilagođenih URL-ova za prikaz";
+
+/* label describing URL Autocomplete as enabled */
+"Autocomplete.enabled" = "Omogućeno";
+
+/* Create a new session after failing a biometric check */
+"BiometricPrompt.newSession" = "Nova sesija";
+
+/* Accessibility label for the back button */
+"Browser.backLabel" = "Nazad";
+
+/* Copy URL button in URL long press menu */
+"Browser.copyMenuLabel" = "Kopiraj";
+
+/* Accessibility label for the forward button */
+"Browser.forwardLabel" = "Naprijed";
+
+/* Accessibility label for the reload button */
+"Browser.reloadLabel" = "Obnovi";
+
+/* Accessibility label for the settings button */
+"Browser.settingsLabel" = "Postavke";
+
+/* Accessibility label for the stop button */
+"Browser.stopLabel" = "Zaustavi";
+
+/* Label to display in the Discoverability overlay for keyboard shortcuts */
+"browserShortcutDescription.selectLocationBar" = "Izaberite traku lokacije";
+
+/* Label on button to complete edits */
+"Done" = "Gotovo";
+
+/* Label on button to allow edits */
+"Edit" = "Uredi";
+
+/* Button label to reload the error page */
+"Error.tryAgainButton" = "Pokušaj ponovo";
+
+/* Button label used for cancelling to open another app from Focus */
+"ExternalAppLink.cancelTitle" = "Otkaži";
+
+/* Dialog title used for opening an external app from Focus. The placeholder string is the app name of either Focus or Klar. */
+"ExternalAppLink.messageTitle" = "%@ želi da otvori drugu aplikaciju";
+
+/* Button label for opening another app from Focus */
+"ExternalAppLink.openTitle" = "Otvori";
+
+/* Dialog title used for opening an external app from Focus. First placeholder string is the app name of either Focus or Klar and the second placeholder string specifies the app it wants to open. */
+"externalAppLinkWithAppName.messageTitle" = "%1$@ želi otvoriti %2$@";
+
+/* Button label in external link dialog to cancel the dialog. Test page: https://people-mozilla.org/~bnicholson/test/schemes.html */
+"ExternalLink.cancelButton" = "Otkaži";
+
+/* Button label in mailto: dialog to send an email. Test page: https://people-mozilla.org/~bnicholson/test/schemes.html */
+"ExternalLink.emailButton" = "Email";
+
+/* Accessibility label for done button in Find in Page Toolbar. */
+"FindInPage.Done" = "Traženje na stranici završeno";
+
+/* Accessibility label for next result button in Find in Page Toolbar. */
+"FindInPage.NextResult" = "Pronađi sljedeće na stranici";
+
+/* Accessibility label for previous result button in Find in Page Toolbar. */
+"FindInPage.PreviousResult" = "Pronađi prethodno na stranici";
+
+/* Label on button to dismiss first run UI */
+"FirstRun.lastSlide.buttonLabel" = "U redu, razumijem!";
+
+/* Message label on the first run screen */
+"FirstRun.messageLabelTagline" = "Istražujte kao da vas niko ne gleda.";
+
+/* Label for instructions to enable Safari, shown when enabling Safari Integration in Settings */
+"Safari.instructionsContentBlockers" = "Dodirni Safari, onda izaberi Blokere sadržaja";
+
+/* Label for instructions to enable Safari, shown when enabling Safari Integration in Settings */
+"Safari.instructionsEnable" = "Omogući %@";
+
+/* Error label when the blocker is not enabled, shown in the intro and main app when disabled */
+"Safari.instructionsNotEnabled" = "%@ nije omogućeno.";
+
+/* Label for instructions to enable Safari, shown when enabling Safari Integration in Settings */
+"Safari.instructionsOpen" = "Otvorite postavke aplikacije";
+
+/* Save button label */
+"Save" = "Sačuvaj";
+
+/* Title for the URL Autocomplete row */
+"Settings.autocompleteSection" = "Automatsko završavanje URL-a";
+
+/* Alert message shown when toggling the Content blocker */
+"Settings.blockOtherMessage" = "Blokiranje drugih tragača sadržaja može prekinuti neki video i web stranice.";
+
+/* Description associated to the Send Usage Data toggle on main screen. %@ is the app name (Focus/Klar) */
+"Settings.detailTextSendUsageData" = "Mozila nastoji prikupljati samo ono što je potrebno da osigura i poboljša %@ za sve.";
+
+/* Subtitle for Send Anonymous Usage Data toggle on main screen */
+"Settings.learnMore" = "Saznajte više.";
+
+/* %@ is the name of the app (Focus / Klar). Title displayed in the settings screen that, when tapped, allows the user to leave a review for the app on the app store. */
+"Settings.rate" = "Ocijeni %@";
+
+/* Title for settings screen */
+"Settings.screenTitle" = "Postavke";
+
+/* Text for button to add another search engine in settings */
+"Settings.Search.AddSearchEngineButton" = "Dodaj novi pretraživač";
+
+/* Title on add search engine settings screen */
+"Settings.Search.AddSearchEngineTitle" = "Dodaj pretraživač";
+
+/* Header for rows of installed search engines */
+"Settings.Search.InstalledSearchEngines" = "INSTALIRANI PRETRAŽIVAČI";
+
+/* Label for input field for the name of the search engine to be added */
+"Settings.Search.NameToDisplay" = "Ime za prikaz";
+
+/* Toast displayed after adding a search engine */
+"Settings.Search.NewSearchEngineAdded" = "Novi pretraživač dodan.";
+
+/* Label for button to bring deleted default engines back */
+"Settings.Search.RestoreEngine" = "Vrati izvorne pretraživače";
+
+/* Placeholder text for input of new search engine name */
+"Settings.Search.SearchEngineName" = "Naziv pretraživača";
+
+/* Label for input of search engine template */
+"Settings.Search.SearchTemplate" = "Pretraži tekst za korištenje";
+
+/* Placeholder text for input of new search engine template */
+"Settings.Search.SearchTemplatePlaceholder" = "Zalijepite ili unesite tekst pretrage. Ako je neophodno, zamijenite ga sa: %s.";
+
+/* Label for the search engine in the search screen */
+"Settings.searchLabel" = "Pretraživač";
+
+/* Title for the search selection screen */
+"Settings.searchTitle2" = "TRAŽI";
+
+/* Section label for Mozilla toggles */
+"Settings.sectionMozilla" = "MOZILLA";
+
+/* Section label for privacy toggles */
+"Settings.sectionPrivacy" = "PRIVACY";
+
+/* Label for toggle on main screen */
+"Settings.toggleBlockFonts" = "Blokiraj web fontove";
+
+/* Label for toggle on settings screen */
+"Settings.toggleFaceID" = "Koristite Face ID za otključavanje aplikacije";
+
+/* %@ is the name of the app (Focus / Klar). Description for 'Enable Face ID' displayed under its respective toggle in the settings menu. */
+"Settings.toggleFaceIDDescription" = "Face ID može otključati %@ ako je URL već otvoren u aplikaciji";
+
+/* Safari toggle label on settings screen */
+"Settings.toggleSafari" = "Safari";
+
+/* Label for Send Usage Data toggle on main screen */
+"Settings.toggleSendUsageData" = "Šalji podatke o korištenju";
+
+/* Label for toggle on settings screen */
+"Settings.toggleTouchID" = "Koristite Touch ID za otključavanje aplikacije";
+
+/* %@ is the name of the app (Focus / Klar). Description for 'Enable Touch ID' displayed under its respective toggle in the settings menu. */
+"Settings.toggleTouchIDDescription" = "Touch ID može otključati %@ ako je URL već otvoren u aplikaciji";
+
+/* Text for a share button */
+"share" = "Dijeli";
+
+/* Text for the share menu option when a user wants to open the find in page menu */
+"ShareMenu.FindInPage" = "Pronađi na stranici";
+
+/* Text for the share menu option when a user wants to reload the site as a desktop */
+"ShareMenu.RequestDesktop" = "Zahtjevaj desktop stranicu";
+
+/* Text for the URL context menu when a user long presses on the URL bar with clipboard contents. */
+"URL.contextMenu" = "Zalijepi & idi";
+
+/* Erase button in the URL bar */
+"URL.eraseButtonLabel" = "ERASE";
+
+/* Label displayed for find in page button when typing in the URL Bar. %@ is any text the user has typed into the URL bar that they want to find on the current page. */
+"URL.findOnPageLabel" = "Pronađi na stranici: %@";
+
+/* Placeholder text shown in the URL bar before the user navigates to a page */
+"URL.placeholderText" = "Tražite ili upišite adresu";
+
+/* Label displayed for search button when typing in the URL bar */
+"URL.searchLabel" = "Traži %@";
+
+/* Text for the URL bar showing the number of trackers blocked on a webpage. */
+"URL.trackersBlockedLabel" = "Blokirani pratioci";
+

@@ -1,0 +1,12 @@
+appId: org.mozilla.ios.Focus
+name: First Search
+---
+- launchApp:
+    clearState: true
+- runFlow: ../common/Onboarding.yaml
+- inputText: "Maestro Studio by Mobile.dev"
+- assertVisible: ".*Show Search Suggestions.*"
+- tapOn: "Yes"
+- pressKey: enter
+- runFlow: ../common/GoogleConsent.yaml
+- assertVisible: ".*Maestro.*"

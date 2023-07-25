@@ -1,0 +1,14 @@
+appId: org.mozilla.ios.Focus
+---
+- takeScreenshot: GoogleConsent
+- repeat:
+    while:
+      visible: "icon close"
+    commands:
+      - tapOn: "icon close"
+- assertVisible: ".*Before you continue to Google.*"
+- repeat:
+    times: 2
+    commands:
+      - tapOn: ".*Read more.*"
+- tapOn: "Reject all"

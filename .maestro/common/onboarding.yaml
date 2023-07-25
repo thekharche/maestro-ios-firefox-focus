@@ -1,0 +1,10 @@
+appId: org.mozilla.ios.Focus
+---
+- runFlow:
+    when:
+      visible: ".*Welcome.*"
+    commands:
+      - tapOn: ".*Get Started.*"
+- tapOn: "Skip"
+- assertVisible: ".*Start your private browsing session.*"
+- tapOn: "icon close"

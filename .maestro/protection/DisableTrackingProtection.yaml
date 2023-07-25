@@ -1,0 +1,24 @@
+appId: org.mozilla.ios.Focus
+name: Disable Tracking Protection
+onFlowStart:
+    - runFlow: 
+        file: ../common/Setup.yaml
+        env:
+            NAME: "disable-tracking-protection"
+onFlowComplete:
+    - runFlow: 
+        file: ../common/Teardown.yaml
+        env:
+            NAME: "disable-tracking-protection"
+---
+- runFlow: ../common/Onboarding.yaml
+- tapOn: "icon cancel"
+- tapOn: "tracking protection"
+- assertVisible: "TRACKERS AND SCRIPTS TO BLOCK"
+- tapOn:
+    id: "BlockerToggle.TrackingProtection"
+- assertVisible: "Protections are OFF for this session"
+- assertNotVisible: "TRACKERS AND SCRIPTS TO BLOCK"
+- tapOn:
+    id: "BlockerToggle.TrackingProtection"
+- assertVisible: "Protections are ON for this session"
